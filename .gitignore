@@ -1,0 +1,18 @@
+#Binary for programs and plugins.
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`.
+*.test
+
+# Output of the log / go test coverage.
+*.out
+
+# Depedency Directories.
+vendor/
+
+# volumes.
+/volumes
