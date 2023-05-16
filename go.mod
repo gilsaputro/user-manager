@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	bou.ke/monkey v1.0.2
-	github.com/golang/mock v1.6.0
+	github.com/gomodule/redigo v1.8.9
 	github.com/hashicorp/vault/api v1.9.1
 	github.com/jinzhu/gorm v1.9.16
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0
