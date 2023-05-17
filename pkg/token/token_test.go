@@ -1,18 +1,23 @@
 package token
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/dgrijalva/jwt-go"
+)
 
 func TestTokenConfig_GenerateToken(t *testing.T) {
 	type args struct {
 		bodyGenerate TokenBody
-		bodyValidate TokenBody
 	}
 	tests := []struct {
 		name            string
 		tr              TokenConfig
 		args            args
+		mockFunc        func(string) string
 		wantErrValidate bool
 		wantErr         bool
+		want            TokenBody
 	}{
 		{
 			name: "success flow",
@@ -25,16 +30,19 @@ func TestTokenConfig_GenerateToken(t *testing.T) {
 					UserID:   1,
 					Username: "user1",
 				},
-				bodyValidate: TokenBody{
-					UserID:   1,
-					Username: "user1",
-				},
+			},
+			mockFunc: func(s string) string {
+				return s
 			},
 			wantErrValidate: false,
 			wantErr:         false,
+			want: TokenBody{
+				UserID:   1,
+				Username: "user1",
+			},
 		},
 		{
-			name: "error validate flow",
+			name: "error validate invalid userid flow",
 			tr: TokenConfig{
 				Secret:        "my_secret_key",
 				ExpTimeInHour: 1,
@@ -44,13 +52,72 @@ func TestTokenConfig_GenerateToken(t *testing.T) {
 					UserID:   1,
 					Username: "user1",
 				},
-				bodyValidate: TokenBody{
-					UserID:   2,
-					Username: "user1",
-				},
+			},
+			mockFunc: func(s string) string {
+				claims := jwt.MapClaims{
+					"username": "username",
+					"userid":   "abc",
+				}
+
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+				tkn, _ := token.SignedString([]byte("my_secret_key"))
+				return tkn
 			},
 			wantErrValidate: true,
 			wantErr:         false,
+			want:            TokenBody{},
+		},
+		{
+			name: "error validate invalid username flow",
+			tr: TokenConfig{
+				Secret:        "my_secret_key",
+				ExpTimeInHour: 1,
+			},
+			args: args{
+				bodyGenerate: TokenBody{
+					UserID:   1,
+					Username: "user1",
+				},
+			},
+			mockFunc: func(s string) string {
+				claims := jwt.MapClaims{
+					"username": 1,
+					"userid":   1,
+				}
+
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+				tkn, _ := token.SignedString([]byte("my_secret_key"))
+				return tkn
+			},
+			wantErrValidate: true,
+			wantErr:         false,
+			want:            TokenBody{},
+		},
+		{
+			name: "error validate invalid value flow",
+			tr: TokenConfig{
+				Secret:        "my_secret_key",
+				ExpTimeInHour: 1,
+			},
+			args: args{
+				bodyGenerate: TokenBody{
+					UserID:   1,
+					Username: "user1",
+				},
+			},
+			mockFunc: func(s string) string {
+				claims := jwt.MapClaims{
+					"username": "",
+					"userid":   0,
+				}
+
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+				tkn, _ := token.SignedString([]byte("my_secret_key"))
+				return tkn
+			},
+			wantErrValidate: true,
+			wantErr:         false,
+			want:            TokenBody{},
 		},
 	}
 	for _, tt := range tests {
@@ -62,10 +129,18 @@ func TestTokenConfig_GenerateToken(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				err = tt.tr.ValidateToken(got, tt.args.bodyValidate)
+				req := tt.mockFunc(got)
+				gotData, err := tt.tr.ValidateToken(req)
 				if (err != nil) != tt.wantErrValidate {
 					t.Errorf("TokenConfig.ValidateToken() error = %v, wantErr %v", err, tt.wantErrValidate)
 					return
+				}
+
+				if !tt.wantErrValidate {
+					if (tt.want) != gotData {
+						t.Errorf("TokenConfig.ValidateToken() got = %v, want %v", gotData, tt.want)
+						return
+					}
 				}
 			}
 		})

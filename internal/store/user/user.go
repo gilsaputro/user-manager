@@ -13,7 +13,7 @@ type UserStoreMethod interface {
 	CreateUser(userinfo UserStoreInfo) error
 	UpdateUser(userid int, userinfo UserStoreInfo) error
 	DeleteUser(userid int) error
-	GetUserID(username, password string) (int, error)
+	GetUserInfoByUsername(username string) (UserStoreInfo, error)
 	GetUserInfoByID(userid int) (UserStoreInfo, error)
 	GetAllUserInfoWithPagging(userid, size, cursor int) ([]UserStoreInfo, error)
 }
@@ -76,18 +76,22 @@ func (u *UserStore) UpdateUser(userid int, userinfo UserStoreInfo) error {
 }
 
 // GetUserID is func to get user id by username and password
-func (u *UserStore) GetUserID(username, password string) (int, error) {
+func (u *UserStore) GetUserInfoByUsername(username string) (UserStoreInfo, error) {
 	var user postgres.User
 	db, err := u.getDB()
 	if err != nil {
-		return 0, err
+		return UserStoreInfo{}, err
 	}
 
-	if err := db.Where("username = ? AND password = ?", username, password).First(&user).Error; err != nil {
-		return 0, err
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+		return UserStoreInfo{}, err
 	}
 
-	return int(user.ID), nil
+	return UserStoreInfo{
+		UserId:   int(user.ID),
+		Username: user.Username,
+		Password: user.Password,
+	}, nil
 }
 
 // DeleteUser is func to delete user info on database

@@ -13,13 +13,20 @@ type TokenConfig struct {
 }
 
 type TokenMethod interface {
-	GenerateToken(body TokenBody) (string, error)
-	ValidateToken(tokenString, body TokenBody) error
+	GenerateToken(TokenBody) (string, error)
+	ValidateToken(string) (TokenBody, error)
 }
 
 type TokenBody struct {
 	UserID   int
 	Username string
+}
+
+func NewTokenMethod(secret string, expinHour int64) TokenMethod {
+	return TokenConfig{
+		Secret:        secret,
+		ExpTimeInHour: expinHour,
+	}
 }
 
 func (t TokenConfig) GenerateToken(body TokenBody) (string, error) {
@@ -34,25 +41,29 @@ func (t TokenConfig) GenerateToken(body TokenBody) (string, error) {
 	return token.SignedString([]byte(t.Secret))
 }
 
-func (t TokenConfig) ValidateToken(tokenString string, body TokenBody) error {
+func (t TokenConfig) ValidateToken(tokenString string) (TokenBody, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(t.Secret), nil
 	})
 
 	if err != nil {
-		return err
+		return TokenBody{}, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userIDInt64, ok := claims["userid"].(float64)
+		userIDFloat64, ok := claims["userid"].(float64)
 		if !ok {
-			return fmt.Errorf("Invalid 'userid' claim")
+			return TokenBody{}, fmt.Errorf("Invalid Token")
 		}
 
-		if claims["username"] == body.Username && int(userIDInt64) == int(body.UserID) {
-			return nil
+		userName, ok := claims["username"].(string)
+		if !ok {
+			return TokenBody{}, fmt.Errorf("Invalid Token")
+		}
+
+		if len(userName) > 0 && userIDFloat64 > 0 {
+			return TokenBody{UserID: int(userIDFloat64), Username: userName}, nil
 		}
 	}
-
-	return fmt.Errorf("Invalid Token")
+	return TokenBody{}, fmt.Errorf("Invalid Token")
 }
