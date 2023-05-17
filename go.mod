@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	bou.ke/monkey v1.0.2
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gomodule/redigo v1.8.9
 	github.com/hashicorp/vault/api v1.9.1
 	github.com/jinzhu/gorm v1.9.16
