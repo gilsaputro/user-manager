@@ -5,6 +5,8 @@ import "github.com/jinzhu/gorm"
 // User struct to user information
 type User struct {
 	gorm.Model
-	Username string
-	Password string
+	Username string `gorm:"size:50;unique;not null"`
+	Password string `gorm:"size:50;not null"`
+	Fullname string
+	Email    string
 }
