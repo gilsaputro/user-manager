@@ -121,6 +121,7 @@ func (u *UserService) AddUser(request AddUserServiceRequest) error {
 	})
 }
 
+// DeleteUser is service level func to validate and delete user info in database
 func (u *UserService) DeleteUser(request DeleteUserServiceRequest) error {
 	value, err := u.token.ValidateToken(request.TokenRequest)
 	if err != nil {
@@ -146,6 +147,7 @@ func (u *UserService) DeleteUser(request DeleteUserServiceRequest) error {
 	return u.store.DeleteUser(userInfo.UserId)
 }
 
+// UpdateUser is service level func to validate and update user info in database
 func (u *UserService) UpdateUser(request UpdateUserServiceRequest) (UserServiceInfo, error) {
 	value, err := u.token.ValidateToken(request.TokenRequest)
 	if err != nil {
@@ -195,6 +197,7 @@ func (u *UserService) UpdateUser(request UpdateUserServiceRequest) (UserServiceI
 	}, nil
 }
 
+// GetUserByID is service level func to validate and get all user based id
 func (u *UserService) GetUserByID(request GetByIDServiceRequest) (UserServiceInfo, error) {
 	value, err := u.token.ValidateToken(request.TokenRequest)
 	if err != nil {
@@ -222,6 +225,7 @@ func (u *UserService) GetUserByID(request GetByIDServiceRequest) (UserServiceInf
 	}, nil
 }
 
+// GetAllUserWithPagging is service level func to validate and get all user based on page
 func (u *UserService) GetAllUserWithPagging(request GetAllUserWithPaggingServiceRequest) (GetAllUserWithPaggingServiceResponse, error) {
 	_, err := u.token.ValidateToken(request.TokenRequest)
 	if err != nil {

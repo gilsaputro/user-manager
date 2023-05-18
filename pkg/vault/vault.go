@@ -8,15 +8,17 @@ import (
 
 const secret_path = "secret/data/config"
 
-// Client is a wrapper for Redigo Redis client
+// Client is a list dependencies for vault package
 type Client struct {
 	vault *api.Client
 }
 
+// VaultMethod is list method for vault package
 type VaultMethod interface {
 	GetConfig() (map[string]string, error)
 }
 
+// NewVaultClient func to init vault and return the VaultMethod interface
 func NewVaultClient(token, address string) (VaultMethod, error) {
 	if len(token) <= 0 {
 		return nil, fmt.Errorf("Error: Vault Token is invalid")
@@ -36,6 +38,7 @@ func NewVaultClient(token, address string) (VaultMethod, error) {
 	}, nil
 }
 
+// GetConfig is func to get config on secret
 func (c *Client) GetConfig() (map[string]string, error) {
 	// Get Secret in Vault
 	res, err := readSecretFromPath(c.vault)
