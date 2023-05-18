@@ -138,7 +138,7 @@ func (u *UserStore) GetAllUserInfoWithPagging(size, cursor int) ([]UserStoreInfo
 	db, err := u.getDB()
 	var totalCount int
 	if err != nil {
-		return []UserStoreInfo{}, 0, err
+		return nil, 0, err
 	}
 
 	var users []postgres.User
@@ -157,7 +157,7 @@ func (u *UserStore) GetAllUserInfoWithPagging(size, cursor int) ([]UserStoreInfo
 	if cursor < totalCursor {
 		nextCursor = cursor + 1
 	} else {
-		nextCursor = 0 // 0 menunjukkan tidak ada halaman berikutnya
+		nextCursor = 0
 	}
 
 	var listUser []UserStoreInfo
