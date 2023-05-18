@@ -1,0 +1,6 @@
+{
+    "data" : {
+        "postgres_config" : "host=localhost port=5492 user=user_binary dbname=management_user password=postgres_p4ssW0Rd sslmode=disable",
+        "token_secret": "your_secret_jwt_token"
+    }
+}

@@ -1,9 +1,11 @@
 package user
 
 import (
+	"fmt"
 	"gilsaputro/user-manager/internal/store/user"
 	"gilsaputro/user-manager/pkg/hash"
 	"gilsaputro/user-manager/pkg/token"
+	"strings"
 )
 
 // UserServiceMethod is list method for User Service
@@ -40,6 +42,7 @@ func (u *UserService) LoginUser(request LoginUserServiceRequest) (string, error)
 	}
 
 	if userInfo.UserId <= 0 {
+		fmt.Println("1")
 		return "", ErrUserNameNotExists
 	}
 
@@ -67,9 +70,23 @@ func (u *UserService) RegisterUser(request RegisterUserServiceRequest) error {
 		}
 	}
 
+	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return err
+	}
+
+	if userInfo.UserId > 0 {
+		return ErrUserNameAlreadyExists
+	}
+
+	hashPassword, err := u.hash.HashValue(request.Password)
+	if err != nil {
+		return err
+	}
+
 	return u.store.CreateUser(user.UserStoreInfo{
 		Username: request.Username,
-		Password: request.Password,
+		Password: string(hashPassword),
 		Fullname: request.Fullname,
 		Email:    request.Email,
 	})

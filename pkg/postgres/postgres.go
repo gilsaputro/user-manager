@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"fmt"
-
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -30,7 +28,6 @@ type Client struct {
 func NewPostgresClient(config interface{}) (PostgresMethod, error) {
 	db, err := gorm.Open("postgres", config)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	// Automatically create the table for the struct

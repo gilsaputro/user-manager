@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -89,8 +90,9 @@ func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == user.ErrUserNameNotExists {
+			if err == user.ErrUserNameNotExists || err == user.ErrPasswordIsIncorrect || strings.Contains(err.Error(), "not found") {
 				code = http.StatusNotFound
+				err = fmt.Errorf("Invalid Username or Password")
 			} else {
 				code = http.StatusInternalServerError
 			}
@@ -98,10 +100,10 @@ func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response = mapResonseLogin(token)
+	response = mapResponseLogin(token)
 }
 
-func mapResonseLogin(r string) utilhttp.StandardResponse {
+func mapResponseLogin(r string) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
 	data := LoginUserResponse{
 		Token: r,

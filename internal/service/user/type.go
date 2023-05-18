@@ -4,9 +4,10 @@ import "errors"
 
 // list Service error
 var (
-	ErrNotGuest            = errors.New("register feature only available for guess")
-	ErrUserNameNotExists   = errors.New("username is not exists")
-	ErrPasswordIsIncorrect = errors.New("password is incorrect")
+	ErrNotGuest              = errors.New("register feature only available for guest")
+	ErrUserNameNotExists     = errors.New("username is not exists")
+	ErrUserNameAlreadyExists = errors.New("username already exists")
+	ErrPasswordIsIncorrect   = errors.New("password is incorrect")
 )
 
 // UserServiceInfo struct is list parameter info for user sevice

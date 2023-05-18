@@ -5,12 +5,13 @@ go 1.19
 require (
 	bou.ke/monkey v1.0.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/gomodule/redigo v1.8.9
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/vault/api v1.9.1
 	github.com/jinzhu/gorm v1.9.16
+	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.6.0
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

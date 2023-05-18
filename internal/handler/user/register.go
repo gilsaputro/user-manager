@@ -86,7 +86,6 @@ func (h *UserHandler) RegisterUserHandler(w http.ResponseWriter, r *http.Request
 			Fullname:     body.Fullname,
 			Email:        body.Email,
 		})
-		fmt.Println("err :", err)
 		errChan <- err
 	}(ctx)
 
@@ -97,8 +96,10 @@ func (h *UserHandler) RegisterUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == user.ErrUserNameNotExists {
-				code = http.StatusNotFound
+			if err == user.ErrUserNameAlreadyExists {
+				code = http.StatusConflict
+			} else if err == user.ErrNotGuest {
+				code = http.StatusUnauthorized
 			} else {
 				code = http.StatusInternalServerError
 			}
