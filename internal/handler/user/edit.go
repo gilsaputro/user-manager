@@ -9,23 +9,26 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
-// LoginUserRequest is list request parameter for Login Api
-type LoginUserRequest struct {
+// EditUserRequest is list request parameter for Edit Api
+type EditUserRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Email    string `json:"email"`
+	Fullname string `json:"fullname"`
 }
 
-// LoginUserResponse is list response parameter for Login Api
-type LoginUserResponse struct {
-	Token string `json:"token"`
+// EditUserResponse is list response parameter for Edit Api
+type EditUserResponse struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Fullname string `json:"fullname"`
 }
 
-// LoginUserHandler is func handler for login
-func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
+// EditUserHandler is func handler for Edit user
+func (h *UserHandler) EditUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
@@ -43,14 +46,14 @@ func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 		data, errMarshal := json.Marshal(response)
 		if errMarshal != nil {
-			log.Println("[LoginUserHandler]-Error Marshal Response :", err)
+			log.Println("[EditUserHandler]-Error Marshal Response :", err)
 			code = http.StatusInternalServerError
 			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
 		}
 		utilhttp.WriteResponse(w, data, code)
 	}()
 
-	var body LoginUserRequest
+	var body EditUserRequest
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		code = http.StatusBadRequest
@@ -66,20 +69,31 @@ func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// checking valid body
-	if len(body.Username) < 1 || len(body.Password) < 1 {
+	if len(body.Username) < 1 || (len(body.Email) < 1 && len(body.Fullname) < 1) && len(body.Password) < 1 {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Invalid Parameter Request")
 		return
 	}
 
-	errChan := make(chan error, 1)
 	var token string
+	var ok bool
+	token, ok = r.Context().Value("token").(string)
+	if !ok {
+		code = http.StatusInternalServerError
+		err = fmt.Errorf("Internal Server Error")
+		return
+	}
+
+	errChan := make(chan error, 1)
+	var result user.UserServiceInfo
 	go func(ctx context.Context) {
-		token, err = h.service.LoginUser(
-			user.LoginUserServiceRequest{
-				Username: body.Username,
-				Password: body.Password,
-			})
+		result, err = h.service.UpdateUser(user.UpdateUserServiceRequest{
+			TokenRequest: token,
+			Username:     body.Username,
+			Password:     body.Password,
+			Fullname:     body.Fullname,
+			Email:        body.Email,
+		})
 		errChan <- err
 	}(ctx)
 
@@ -90,9 +104,10 @@ func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == user.ErrUserNameNotExists || err == user.ErrPasswordIsIncorrect || strings.Contains(err.Error(), "not found") {
-				code = http.StatusNotFound
-				err = fmt.Errorf("Invalid Username or Password")
+			if err == user.ErrUserNameNotExists || err == user.ErrPasswordIsIncorrect {
+				code = http.StatusBadRequest
+			} else if err == user.ErrUnauthorized || err == user.ErrCannotUpdateOtherUser {
+				code = http.StatusUnauthorized
 			} else {
 				code = http.StatusInternalServerError
 			}
@@ -100,14 +115,18 @@ func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response = mapResponseLogin(token)
+	response = mapResponseEdit(result)
 }
 
-func mapResponseLogin(result string) utilhttp.StandardResponse {
+func mapResponseEdit(result user.UserServiceInfo) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
-	data := LoginUserResponse{
-		Token: result,
+
+	data := EditUserResponse{
+		Username: result.Username,
+		Email:    result.Email,
+		Fullname: result.Fullname,
 	}
+
 	res.Data = data
 	return res
 }

@@ -14,4 +14,4 @@ deps-tear:
 
 .PHONY: run-local
 run-local:
-	@
+	@go build ./cmd/user-manager/ && ./user-manager

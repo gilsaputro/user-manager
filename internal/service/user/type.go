@@ -11,6 +11,8 @@ var (
 	ErrUnauthorized          = errors.New("unauthorized")
 	ErrCannotDeleteOtherUser = errors.New("cannot delete other user, please login first")
 	ErrDataNotFound          = errors.New("data not found")
+	ErrCannotUpdateOtherUser = errors.New("cannot edit other user, please login first")
+	ErrCannotGetOtherUser    = errors.New("cannot get other user data")
 )
 
 // UserServiceInfo struct is list parameter info for user sevice
@@ -64,4 +66,19 @@ type GetAllUserWithPaggingServiceRequest struct {
 type GetAllUserWithPaggingServiceResponse struct {
 	UserList   []UserServiceInfo
 	NextCursor int
+}
+
+// UpdateUserServiceRequest is list parameter for update user
+type UpdateUserServiceRequest struct {
+	TokenRequest string
+	Username     string
+	Password     string
+	Fullname     string
+	Email        string
+}
+
+// GetByIDServiceRequest is list parameter for get user by id
+type GetByIDServiceRequest struct {
+	TokenRequest string
+	UserId       int64
 }

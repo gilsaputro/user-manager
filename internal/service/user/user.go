@@ -13,8 +13,8 @@ type UserServiceMethod interface {
 	RegisterUser(RegisterUserServiceRequest) error
 	AddUser(AddUserServiceRequest) error
 	DeleteUser(DeleteUserServiceRequest) error
-	// UpdateUser(userid int, username, password string) error
-	// GetUserByID(userid int) (UserServiceInfo, error)
+	UpdateUser(UpdateUserServiceRequest) (UserServiceInfo, error)
+	GetUserByID(GetByIDServiceRequest) (UserServiceInfo, error)
 	GetAllUserWithPagging(GetAllUserWithPaggingServiceRequest) (GetAllUserWithPaggingServiceResponse, error)
 }
 
@@ -146,12 +146,77 @@ func (u *UserService) DeleteUser(request DeleteUserServiceRequest) error {
 	return u.store.DeleteUser(userInfo.UserId)
 }
 
-func (u *UserService) UpdateUser(userid int, username, password string) error {
-	return nil
+func (u *UserService) UpdateUser(request UpdateUserServiceRequest) (UserServiceInfo, error) {
+	value, err := u.token.ValidateToken(request.TokenRequest)
+	if err != nil {
+		return UserServiceInfo{}, ErrUnauthorized
+	}
+
+	if value.Username != request.Username {
+		return UserServiceInfo{}, ErrCannotUpdateOtherUser
+	}
+
+	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
+	if err != nil || userInfo.UserId <= 0 {
+		if strings.Contains(err.Error(), "not found") || userInfo.UserId <= 0 {
+			return UserServiceInfo{}, ErrUserNameNotExists
+		}
+		return UserServiceInfo{}, err
+	}
+
+	if len(request.Password) > 0 {
+		hashPassword, err := u.hash.HashValue(request.Password)
+		if err != nil {
+			return UserServiceInfo{}, err
+		}
+
+		userInfo.Password = string(hashPassword)
+	}
+
+	if len(request.Email) > 0 {
+		userInfo.Email = request.Email
+	}
+
+	if len(request.Fullname) > 0 {
+		userInfo.Fullname = request.Fullname
+	}
+
+	err = u.store.UpdateUser(userInfo)
+
+	return UserServiceInfo{
+		UserId:      userInfo.UserId,
+		Username:    userInfo.Username,
+		Fullname:    userInfo.Fullname,
+		Email:       userInfo.Email,
+		CreatedDate: userInfo.CreatedDate,
+	}, nil
 }
 
-func (u *UserService) GetUserByID(userid int) (UserServiceInfo, error) {
-	return UserServiceInfo{}, nil
+func (u *UserService) GetUserByID(request GetByIDServiceRequest) (UserServiceInfo, error) {
+	value, err := u.token.ValidateToken(request.TokenRequest)
+	if err != nil {
+		return UserServiceInfo{}, ErrUnauthorized
+	}
+
+	if value.UserID != int(request.UserId) {
+		return UserServiceInfo{}, ErrCannotGetOtherUser
+	}
+
+	userInfo, err := u.store.GetUserInfoByID(int(request.UserId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") || userInfo.UserId <= 0 {
+			return UserServiceInfo{}, ErrUserNameNotExists
+		}
+		return UserServiceInfo{}, err
+	}
+
+	return UserServiceInfo{
+		UserId:      userInfo.UserId,
+		Username:    userInfo.Username,
+		Fullname:    userInfo.Fullname,
+		Email:       userInfo.Email,
+		CreatedDate: userInfo.CreatedDate,
+	}, nil
 }
 
 func (u *UserService) GetAllUserWithPagging(request GetAllUserWithPaggingServiceRequest) (GetAllUserWithPaggingServiceResponse, error) {

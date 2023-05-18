@@ -106,12 +106,12 @@ func (h *UserHandler) GetWithPageUserHandler(w http.ResponseWriter, r *http.Requ
 	response = mapResponseGetWithPage(listUser)
 }
 
-func mapResponseGetWithPage(listUser user.GetAllUserWithPaggingServiceResponse) utilhttp.StandardResponse {
+func mapResponseGetWithPage(result user.GetAllUserWithPaggingServiceResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
 	var data GetWithPageUserResponse
 	var users []UserInfo
 
-	for _, user := range listUser.UserList {
+	for _, user := range result.UserList {
 		users = append(users, UserInfo{
 			UserID:      user.UserId,
 			Username:    user.Username,
@@ -122,8 +122,8 @@ func mapResponseGetWithPage(listUser user.GetAllUserWithPaggingServiceResponse) 
 	}
 
 	data.User = users
-	if listUser.NextCursor > 0 {
-		data.Cursor = &listUser.NextCursor
+	if result.NextCursor > 0 {
+		data.Cursor = &result.NextCursor
 	}
 
 	res.Data = data

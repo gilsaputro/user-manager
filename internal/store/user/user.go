@@ -12,7 +12,7 @@ import (
 // UserStoreMethod is set of methods for interacting with a user storage system
 type UserStoreMethod interface {
 	CreateUser(userinfo UserStoreInfo) error
-	UpdateUser(userid int, userinfo UserStoreInfo) error
+	UpdateUser(userinfo UserStoreInfo) error
 	DeleteUser(userid int) error
 	GetUserInfoByUsername(username string) (UserStoreInfo, error)
 	GetUserInfoByID(userid int) (UserStoreInfo, error)
@@ -50,14 +50,14 @@ func (u *UserStore) CreateUser(userinfo UserStoreInfo) error {
 		Username: userinfo.Username,
 		Password: userinfo.Password,
 		Fullname: userinfo.Fullname,
-		Email:    userinfo.Fullname,
+		Email:    userinfo.Email,
 	}
 
 	return db.Create(user).Error
 }
 
 // UpdateUser is func to edit / update user info into database
-func (u *UserStore) UpdateUser(userid int, userinfo UserStoreInfo) error {
+func (u *UserStore) UpdateUser(userinfo UserStoreInfo) error {
 	db, err := u.getDB()
 	if err != nil {
 		return err
@@ -65,11 +65,12 @@ func (u *UserStore) UpdateUser(userid int, userinfo UserStoreInfo) error {
 
 	var user postgres.User
 
-	err = db.Where("username = ? AND id = ?", userinfo.Username, userid).First(&user).Error
+	err = db.Where("username = ? AND id = ?", userinfo.Username, userinfo.UserId).First(&user).Error
 	if err != nil {
 		return err
 	}
 
+	user.Password = userinfo.Password
 	user.Fullname = userinfo.Fullname
 	user.Email = userinfo.Email
 
@@ -108,7 +109,7 @@ func (u *UserStore) DeleteUser(userid int) error {
 		},
 	}
 
-	return db.Delete(&user).Error
+	return db.Unscoped().Delete(&user).Error
 }
 
 // GetUserByID is func to get user info by id on database
@@ -124,8 +125,11 @@ func (u *UserStore) GetUserInfoByID(userid int) (UserStoreInfo, error) {
 	}
 
 	return UserStoreInfo{
-		Username: user.Username,
-		Password: user.Password,
+		Username:    user.Username,
+		UserId:      int(user.ID),
+		Fullname:    user.Fullname,
+		Email:       user.Email,
+		CreatedDate: user.CreatedAt.String(),
 	}, nil
 }
 
