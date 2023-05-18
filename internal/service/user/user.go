@@ -133,7 +133,7 @@ func (u *UserService) DeleteUser(request DeleteUserServiceRequest) error {
 
 	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
 	if err != nil || userInfo.UserId <= 0 {
-		if strings.Contains(err.Error(), "not found") || userInfo.UserId <= 0 {
+		if (err == nil && userInfo.UserId <= 0) || strings.Contains(err.Error(), "not found") {
 			return ErrUserNameNotExists
 		}
 		return err
@@ -158,7 +158,7 @@ func (u *UserService) UpdateUser(request UpdateUserServiceRequest) (UserServiceI
 
 	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
 	if err != nil || userInfo.UserId <= 0 {
-		if strings.Contains(err.Error(), "not found") || userInfo.UserId <= 0 {
+		if (err == nil && userInfo.UserId <= 0) || strings.Contains(err.Error(), "not found") {
 			return UserServiceInfo{}, ErrUserNameNotExists
 		}
 		return UserServiceInfo{}, err
@@ -182,6 +182,9 @@ func (u *UserService) UpdateUser(request UpdateUserServiceRequest) (UserServiceI
 	}
 
 	err = u.store.UpdateUser(userInfo)
+	if err != nil {
+		return UserServiceInfo{}, err
+	}
 
 	return UserServiceInfo{
 		UserId:      userInfo.UserId,
@@ -203,8 +206,8 @@ func (u *UserService) GetUserByID(request GetByIDServiceRequest) (UserServiceInf
 	}
 
 	userInfo, err := u.store.GetUserInfoByID(int(request.UserId))
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") || userInfo.UserId <= 0 {
+	if err != nil || userInfo.UserId <= 0 {
+		if (err == nil && userInfo.UserId <= 0) || strings.Contains(err.Error(), "not found") {
 			return UserServiceInfo{}, ErrUserNameNotExists
 		}
 		return UserServiceInfo{}, err
@@ -220,6 +223,10 @@ func (u *UserService) GetUserByID(request GetByIDServiceRequest) (UserServiceInf
 }
 
 func (u *UserService) GetAllUserWithPagging(request GetAllUserWithPaggingServiceRequest) (GetAllUserWithPaggingServiceResponse, error) {
+	_, err := u.token.ValidateToken(request.TokenRequest)
+	if err != nil {
+		return GetAllUserWithPaggingServiceResponse{}, ErrUnauthorized
+	}
 	if request.Size < 1 || request.Size > 20 {
 		request.Size = 20
 	}
