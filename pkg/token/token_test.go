@@ -1,6 +1,7 @@
 package token
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
@@ -142,6 +143,37 @@ func TestTokenConfig_GenerateToken(t *testing.T) {
 						return
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestNewTokenMethod(t *testing.T) {
+	type args struct {
+		secret    string
+		expinHour int64
+	}
+	tests := []struct {
+		name string
+		args args
+		want TokenMethod
+	}{
+		{
+			name: "success flow",
+			args: args{
+				secret:    "some_secret",
+				expinHour: 1,
+			},
+			want: TokenConfig{
+				Secret:        "some_secret",
+				ExpTimeInHour: 1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewTokenMethod(tt.args.secret, tt.args.expinHour); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewTokenMethod() = %v, want %v", got, tt.want)
 			}
 		})
 	}
