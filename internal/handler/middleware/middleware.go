@@ -47,18 +47,3 @@ func (m *Middleware) MiddlewareVerifyToken(next http.HandlerFunc) http.HandlerFu
 		next.ServeHTTP(w, r)
 	}
 }
-
-// MiddlewareParseToken is func to parse before execute the handler
-func (m *Middleware) MiddlewareParseToken(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the Authorization header value from the request
-		authHeader := r.Header.Get("Authorization")
-
-		// Extract the token from the Authorization header
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-
-		// Parse variable into context
-		r = r.WithContext(context.WithValue(r.Context(), "token", token))
-		next.ServeHTTP(w, r)
-	}
-}
