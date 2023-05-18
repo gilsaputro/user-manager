@@ -42,9 +42,10 @@ Note: These instructions assume that you have Git installed on your machine. If 
 
 ### Docker Setup:
 To run the AquaFarm management system binary correctly, it is necessary to connect it with the related dependencies. This can be done simply by executing the following command: 
-
+<p align="center">
 <img width="584" alt="init" src="https://github.com/gilsaputro/user-manager/assets/124489863/6d140017-adbd-4614-b807-0bfdc1e1d45a">
-  
+</p>
+
 ```azure
 make deps-init
 ```
@@ -54,8 +55,9 @@ The deps-init command will perform the following actions:
 - Build Postgres and verify that it is running
 
 To stop the dependencies, run :
-
+<p align="center">
 <img width="457" alt="tear" src="https://github.com/gilsaputro/user-manager/assets/124489863/0f71ac8c-c729-4bd5-9224-4f107d61b020">
+</p>
 
 ```azure
 make deps-tear
@@ -73,9 +75,10 @@ go mod vendor
 Note: If you have change the docker config please change the config in /config/config.yaml before run it
 
 And run using :
-
+<p align="center">
 <img width="578" alt="run" src="https://github.com/gilsaputro/user-manager/assets/124489863/1f9c733f-73fc-4efa-aebb-518e72e80cb3">
-
+</p>
+  
 ```
 make run-local
 ```
@@ -94,9 +97,10 @@ go build ./cmd/user-manager/
 ```
 
 to run go test you can use :
-
+<p align="center">
 <img width="568" alt="test" src="https://github.com/gilsaputro/user-manager/assets/124489863/793edb51-adbe-4372-9058-2aa12e7b9479">
-
+</p>
+  
 ```
 make test
 ```
