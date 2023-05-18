@@ -12,16 +12,20 @@ import (
 	"time"
 )
 
-// AddUserRequest is list request parameter for Add Api
-type AddUserRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
-	Fullname string `json:"fullname"`
+// GetWithPageUserRequest is list request parameter for GetWithPage Api
+type GetWithPageUserRequest struct {
+	Size   int `json:"size"`
+	Cursor int `json:"cursor"`
 }
 
-// AddUserHandler is func handler for Add user
-func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
+// GetWithPageUserResponse is list response parameter for GetWithPage Api
+type GetWithPageUserResponse struct {
+	User   []UserInfo `json:"users"`
+	Cursor *int       `json:"next_cursor,omitempty"`
+}
+
+// GetWithPageUserHandler is func handler for GetWithPage user
+func (h *UserHandler) GetWithPageUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
@@ -39,14 +43,14 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 
 		data, errMarshal := json.Marshal(response)
 		if errMarshal != nil {
-			log.Println("[AddUserHandler]-Error Marshal Response :", err)
+			log.Println("[GetWithPageUserHandler]-Error Marshal Response :", err)
 			code = http.StatusInternalServerError
 			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
 		}
 		utilhttp.WriteResponse(w, data, code)
 	}()
 
-	var body AddUserRequest
+	var body GetWithPageUserRequest
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		code = http.StatusBadRequest
@@ -61,13 +65,6 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// checking valid body
-	if len(body.Username) < 1 || len(body.Password) < 1 {
-		code = http.StatusBadRequest
-		err = fmt.Errorf("Invalid Parameter Request")
-		return
-	}
-
 	var token string
 	var ok bool
 	token, ok = r.Context().Value("token").(string)
@@ -78,13 +75,12 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	errChan := make(chan error, 1)
+	var listUser user.GetAllUserWithPaggingServiceResponse
 	go func(ctx context.Context) {
-		err = h.service.AddUser(user.AddUserServiceRequest{
+		listUser, err = h.service.GetAllUserWithPagging(user.GetAllUserWithPaggingServiceRequest{
 			TokenRequest: token,
-			Username:     body.Username,
-			Password:     body.Password,
-			Fullname:     body.Fullname,
-			Email:        body.Email,
+			Size:         body.Size,
+			Cursor:       body.Cursor,
 		})
 		errChan <- err
 	}(ctx)
@@ -96,10 +92,10 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == user.ErrUserNameAlreadyExists {
-				code = http.StatusConflict
-			} else if err == user.ErrNotGuest || err == user.ErrUnauthorized {
+			if err == user.ErrUnauthorized {
 				code = http.StatusUnauthorized
+			} else if err == user.ErrDataNotFound {
+				code = http.StatusNotFound
 			} else {
 				code = http.StatusInternalServerError
 			}
@@ -107,10 +103,30 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response = mapResponseAdd()
+	response = mapResponseGetWithPage(listUser)
 }
 
-func mapResponseAdd() utilhttp.StandardResponse {
+func mapResponseGetWithPage(listUser user.GetAllUserWithPaggingServiceResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
+	var data GetWithPageUserResponse
+	var users []UserInfo
+
+	for _, user := range listUser.UserList {
+		users = append(users, UserInfo{
+			UserID:      user.UserId,
+			Username:    user.Username,
+			Email:       user.Email,
+			Fullname:    user.Fullname,
+			CreatedDate: user.CreatedDate,
+		})
+	}
+
+	data.User = users
+	if listUser.NextCursor > 0 {
+		data.Cursor = &listUser.NextCursor
+	}
+
+	res.Data = data
+
 	return res
 }

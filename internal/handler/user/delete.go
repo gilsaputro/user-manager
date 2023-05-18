@@ -12,16 +12,14 @@ import (
 	"time"
 )
 
-// AddUserRequest is list request parameter for Add Api
-type AddUserRequest struct {
+// DeleteUserRequest is list request parameter for Delete Api
+type DeleteUserRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Email    string `json:"email"`
-	Fullname string `json:"fullname"`
 }
 
-// AddUserHandler is func handler for Add user
-func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
+// DeleteUserHandler is func handler for Delete user
+func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
@@ -39,14 +37,14 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 
 		data, errMarshal := json.Marshal(response)
 		if errMarshal != nil {
-			log.Println("[AddUserHandler]-Error Marshal Response :", err)
+			log.Println("[DeleteUserHandler]-Error Marshal Response :", err)
 			code = http.StatusInternalServerError
 			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
 		}
 		utilhttp.WriteResponse(w, data, code)
 	}()
 
-	var body AddUserRequest
+	var body DeleteUserRequest
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		code = http.StatusBadRequest
@@ -79,12 +77,10 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	errChan := make(chan error, 1)
 	go func(ctx context.Context) {
-		err = h.service.AddUser(user.AddUserServiceRequest{
+		err = h.service.DeleteUser(user.DeleteUserServiceRequest{
 			TokenRequest: token,
 			Username:     body.Username,
 			Password:     body.Password,
-			Fullname:     body.Fullname,
-			Email:        body.Email,
 		})
 		errChan <- err
 	}(ctx)
@@ -96,9 +92,9 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == user.ErrUserNameAlreadyExists {
-				code = http.StatusConflict
-			} else if err == user.ErrNotGuest || err == user.ErrUnauthorized {
+			if err == user.ErrUserNameNotExists || err == user.ErrPasswordIsIncorrect {
+				code = http.StatusBadRequest
+			} else if err == user.ErrUnauthorized || err == user.ErrCannotDeleteOtherUser {
 				code = http.StatusUnauthorized
 			} else {
 				code = http.StatusInternalServerError
@@ -107,10 +103,10 @@ func (h *UserHandler) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response = mapResponseAdd()
+	response = mapResponseDelete()
 }
 
-func mapResponseAdd() utilhttp.StandardResponse {
+func mapResponseDelete() utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
 	return res
 }

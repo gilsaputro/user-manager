@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"gilsaputro/user-manager/internal/store/user"
 	"gilsaputro/user-manager/pkg/hash"
 	"gilsaputro/user-manager/pkg/token"
@@ -13,10 +12,10 @@ type UserServiceMethod interface {
 	LoginUser(LoginUserServiceRequest) (string, error)
 	RegisterUser(RegisterUserServiceRequest) error
 	AddUser(AddUserServiceRequest) error
+	DeleteUser(DeleteUserServiceRequest) error
 	// UpdateUser(userid int, username, password string) error
-	// DeleteUser(userid int) error
 	// GetUserByID(userid int) (UserServiceInfo, error)
-	// GetAllUserWithPagging(userid, size, cursor int) ([]UserServiceInfo, error)
+	GetAllUserWithPagging(GetAllUserWithPaggingServiceRequest) (GetAllUserWithPaggingServiceResponse, error)
 }
 
 // UserService is list dependencies for user service
@@ -43,7 +42,6 @@ func (u *UserService) LoginUser(request LoginUserServiceRequest) (string, error)
 	}
 
 	if userInfo.UserId <= 0 {
-		fmt.Println("1")
 		return "", ErrUserNameNotExists
 	}
 
@@ -98,7 +96,7 @@ func (u *UserService) RegisterUser(request RegisterUserServiceRequest) error {
 func (u *UserService) AddUser(request AddUserServiceRequest) error {
 	_, err := u.token.ValidateToken(request.TokenRequest)
 	if err != nil {
-		return ErrInvalidToken
+		return ErrUnauthorized
 	}
 
 	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
@@ -123,11 +121,32 @@ func (u *UserService) AddUser(request AddUserServiceRequest) error {
 	})
 }
 
-func (u *UserService) UpdateUser(userid int, username, password string) error {
-	return nil
+func (u *UserService) DeleteUser(request DeleteUserServiceRequest) error {
+	value, err := u.token.ValidateToken(request.TokenRequest)
+	if err != nil {
+		return ErrUnauthorized
+	}
+
+	if value.Username != request.Username {
+		return ErrCannotDeleteOtherUser
+	}
+
+	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
+	if err != nil || userInfo.UserId <= 0 {
+		if strings.Contains(err.Error(), "not found") || userInfo.UserId <= 0 {
+			return ErrUserNameNotExists
+		}
+		return err
+	}
+
+	if !u.hash.CompareValue(userInfo.Password, request.Password) {
+		return ErrPasswordIsIncorrect
+	}
+
+	return u.store.DeleteUser(userInfo.UserId)
 }
 
-func (u *UserService) DeleteUser(userid int) error {
+func (u *UserService) UpdateUser(userid int, username, password string) error {
 	return nil
 }
 
@@ -135,6 +154,37 @@ func (u *UserService) GetUserByID(userid int) (UserServiceInfo, error) {
 	return UserServiceInfo{}, nil
 }
 
-func (u *UserService) GetAllUserWithPagging(userid, size, cursor int) ([]UserServiceInfo, error) {
-	return nil, nil
+func (u *UserService) GetAllUserWithPagging(request GetAllUserWithPaggingServiceRequest) (GetAllUserWithPaggingServiceResponse, error) {
+	if request.Size < 1 || request.Size > 20 {
+		request.Size = 20
+	}
+
+	if request.Cursor < 1 {
+		request.Cursor = 1
+	}
+
+	list, next, err := u.store.GetAllUserInfoWithPagging(request.Size, request.Cursor)
+	if err != nil {
+		return GetAllUserWithPaggingServiceResponse{}, err
+	}
+
+	if len(list) == 0 {
+		return GetAllUserWithPaggingServiceResponse{}, ErrDataNotFound
+	}
+
+	var listUserInfo []UserServiceInfo
+	for _, user := range list {
+		listUserInfo = append(listUserInfo, UserServiceInfo{
+			UserId:      user.UserId,
+			Username:    user.Username,
+			Fullname:    user.Fullname,
+			Email:       user.Email,
+			CreatedDate: user.CreatedDate,
+		})
+	}
+
+	return GetAllUserWithPaggingServiceResponse{
+		UserList:   listUserInfo,
+		NextCursor: next,
+	}, nil
 }

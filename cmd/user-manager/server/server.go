@@ -156,7 +156,9 @@ func NewServer() (*Server, error) {
 		r.HandleFunc("/register", s.middleware.MiddlewareVerifyToken(s.userHandler.RegisterUserHandler)).Methods("POST")
 
 		// Init User Path
+		r.HandleFunc("/user", s.middleware.MiddlewareVerifyToken(s.userHandler.GetWithPageUserHandler)).Methods("GET")
 		r.HandleFunc("/user", s.middleware.MiddlewareVerifyToken(s.userHandler.AddUserHandler)).Methods("POST")
+		r.HandleFunc("/user", s.middleware.MiddlewareVerifyToken(s.userHandler.DeleteUserHandler)).Methods("DELETE")
 		port := ":" + s.cfg.Port
 		log.Println("running on port ", port)
 

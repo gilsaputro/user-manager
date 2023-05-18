@@ -10,6 +10,15 @@ type UserHandler struct {
 	timeoutInSec int
 }
 
+// UserInfo list paramater for user info
+type UserInfo struct {
+	UserID      int    `json:"id"`
+	Username    string `json:"username"`
+	Email       string `json:"email"`
+	Fullname    string `json:"fullname"`
+	CreatedDate string `json:"created_date"`
+}
+
 // Option set options for http handler config
 type Option func(*UserHandler)
 

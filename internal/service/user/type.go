@@ -8,14 +8,18 @@ var (
 	ErrUserNameNotExists     = errors.New("username is not exists")
 	ErrUserNameAlreadyExists = errors.New("username already exists")
 	ErrPasswordIsIncorrect   = errors.New("password is incorrect")
-	ErrInvalidToken          = errors.New("invalid token")
+	ErrUnauthorized          = errors.New("unauthorized")
+	ErrCannotDeleteOtherUser = errors.New("cannot delete other user, please login first")
+	ErrDataNotFound          = errors.New("data not found")
 )
 
 // UserServiceInfo struct is list parameter info for user sevice
 type UserServiceInfo struct {
-	UserId   int
-	Username string
-	Password string
+	UserId      int
+	Username    string
+	Fullname    string
+	Email       string
+	CreatedDate string
 }
 
 // LoginUserServiceRequest is list parameter for login user
@@ -40,4 +44,24 @@ type AddUserServiceRequest struct {
 	Password     string
 	Fullname     string
 	Email        string
+}
+
+// DeleteUserServiceRequest is list parameter for add user by user
+type DeleteUserServiceRequest struct {
+	TokenRequest string
+	Username     string
+	Password     string
+}
+
+// GetAllUserWithPaggingServiceRequest is list parameter for get user by pagging
+type GetAllUserWithPaggingServiceRequest struct {
+	TokenRequest string
+	Size         int
+	Cursor       int
+}
+
+// GetAllUserWithPaggingServiceResponse is list parameter response for get user by pagging
+type GetAllUserWithPaggingServiceResponse struct {
+	UserList   []UserServiceInfo
+	NextCursor int
 }

@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"math"
 
 	"github.com/jinzhu/gorm"
 
@@ -15,7 +16,7 @@ type UserStoreMethod interface {
 	DeleteUser(userid int) error
 	GetUserInfoByUsername(username string) (UserStoreInfo, error)
 	GetUserInfoByID(userid int) (UserStoreInfo, error)
-	GetAllUserInfoWithPagging(userid, size, cursor int) ([]UserStoreInfo, error)
+	GetAllUserInfoWithPagging(size, cursor int) ([]UserStoreInfo, int, error)
 }
 
 // UserStore is list dependencies user store
@@ -129,25 +130,42 @@ func (u *UserStore) GetUserInfoByID(userid int) (UserStoreInfo, error) {
 }
 
 // GetAllUserInfoWithPagging is func to get all data user info in database
-func (u *UserStore) GetAllUserInfoWithPagging(userid, size, cursor int) ([]UserStoreInfo, error) {
+func (u *UserStore) GetAllUserInfoWithPagging(size, cursor int) ([]UserStoreInfo, int, error) {
 	db, err := u.getDB()
+	var totalCount int
 	if err != nil {
-		return []UserStoreInfo{}, err
+		return []UserStoreInfo{}, 0, err
 	}
 
 	var users []postgres.User
-	err = db.Find(&users).Limit(size).Offset((cursor - 1) * size).Error
-	if err != nil {
-		return nil, err
+	query := db.Limit(size).Offset((cursor - 1) * size).Order("id asc")
+
+	if err := query.Find(&users).Error; err != nil {
+		return nil, 0, err
 	}
 
-	var listUser = make([]UserStoreInfo, len(users))
+	if err := db.Model(&postgres.User{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalCursor := int(math.Ceil(float64(totalCount) / float64(size)))
+	var nextCursor int
+	if cursor < totalCursor {
+		nextCursor = cursor + 1
+	} else {
+		nextCursor = 0 // 0 menunjukkan tidak ada halaman berikutnya
+	}
+
+	var listUser []UserStoreInfo
 	for _, user := range users {
 		listUser = append(listUser, UserStoreInfo{
-			UserId:   int(user.ID),
-			Username: user.Username,
+			UserId:      int(user.ID),
+			Username:    user.Username,
+			Fullname:    user.Fullname,
+			Email:       user.Email,
+			CreatedDate: user.CreatedAt.String(),
 		})
 	}
 
-	return listUser, err
+	return listUser, nextCursor, err
 }
