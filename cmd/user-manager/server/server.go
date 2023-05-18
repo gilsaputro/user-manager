@@ -153,8 +153,10 @@ func NewServer() (*Server, error) {
 		r := mux.NewRouter()
 		// Init Guest Path
 		r.HandleFunc("/login", s.userHandler.LoginUserHandler).Methods("POST")
-		r.HandleFunc("/register", s.middleware.MiddlewareParseToken(s.userHandler.RegisterUserHandler)).Methods("POST")
+		r.HandleFunc("/register", s.middleware.MiddlewareVerifyToken(s.userHandler.RegisterUserHandler)).Methods("POST")
 
+		// Init User Path
+		r.HandleFunc("/user", s.middleware.MiddlewareVerifyToken(s.userHandler.AddUserHandler)).Methods("POST")
 		port := ":" + s.cfg.Port
 		log.Println("running on port ", port)
 

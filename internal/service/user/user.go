@@ -12,7 +12,7 @@ import (
 type UserServiceMethod interface {
 	LoginUser(LoginUserServiceRequest) (string, error)
 	RegisterUser(RegisterUserServiceRequest) error
-	AddUser(CreateUserServiceRequest) error
+	AddUser(AddUserServiceRequest) error
 	// UpdateUser(userid int, username, password string) error
 	// DeleteUser(userid int) error
 	// GetUserByID(userid int) (UserServiceInfo, error)
@@ -35,6 +35,7 @@ func NewUserService(store user.UserStoreMethod, token token.TokenMethod, hash ha
 	}
 }
 
+// LoginUser is service layer func to validate and generate token if the user is exists
 func (u *UserService) LoginUser(request LoginUserServiceRequest) (string, error) {
 	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
 	if err != nil {
@@ -56,6 +57,7 @@ func (u *UserService) LoginUser(request LoginUserServiceRequest) (string, error)
 	})
 }
 
+// RegisterUser is service layer func to validate and creating user to database if the user is not exists
 func (u *UserService) RegisterUser(request RegisterUserServiceRequest) error {
 	value, _ := u.token.ValidateToken(request.TokenRequest)
 
@@ -92,15 +94,30 @@ func (u *UserService) RegisterUser(request RegisterUserServiceRequest) error {
 	})
 }
 
-func (u *UserService) AddUser(request CreateUserServiceRequest) error {
+// AddUser is service layer func to validate and creating user to database if the user is not exists and the token is verified
+func (u *UserService) AddUser(request AddUserServiceRequest) error {
 	_, err := u.token.ValidateToken(request.TokenRequest)
+	if err != nil {
+		return ErrInvalidToken
+	}
+
+	userInfo, err := u.store.GetUserInfoByUsername(request.Username)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return err
+	}
+
+	if userInfo.UserId > 0 {
+		return ErrUserNameAlreadyExists
+	}
+
+	hashPassword, err := u.hash.HashValue(request.Password)
 	if err != nil {
 		return err
 	}
 
 	return u.store.CreateUser(user.UserStoreInfo{
 		Username: request.Username,
-		Password: request.Password,
+		Password: string(hashPassword),
 		Fullname: request.Fullname,
 		Email:    request.Email,
 	})

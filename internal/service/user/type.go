@@ -8,6 +8,7 @@ var (
 	ErrUserNameNotExists     = errors.New("username is not exists")
 	ErrUserNameAlreadyExists = errors.New("username already exists")
 	ErrPasswordIsIncorrect   = errors.New("password is incorrect")
+	ErrInvalidToken          = errors.New("invalid token")
 )
 
 // UserServiceInfo struct is list parameter info for user sevice
@@ -32,8 +33,8 @@ type RegisterUserServiceRequest struct {
 	Email        string
 }
 
-// CreateUserServiceRequest is list parameter for creating user
-type CreateUserServiceRequest struct {
+// AddUserServiceRequest is list parameter for add user by user
+type AddUserServiceRequest struct {
 	TokenRequest string
 	Username     string
 	Password     string

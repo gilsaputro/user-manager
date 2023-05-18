@@ -33,7 +33,7 @@ func (m *Middleware) MiddlewareVerifyToken(next http.HandlerFunc) http.HandlerFu
 		authHeader := r.Header.Get("Authorization")
 
 		// Check if the Authorization header is empty or does not start with "Bearer "
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		if (authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ")) && r.URL.Path != "/register" {
 			data := []byte(`{"code":401,"message":"unauthorized"}`)
 			utilhttp.WriteResponse(w, data, http.StatusUnauthorized)
 			return
