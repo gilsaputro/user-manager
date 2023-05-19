@@ -2,10 +2,10 @@
 This repository contains the prototype for an User Management Application.
 
 ## High-Level Design (HLD)
-For a detailed understanding of the system architecture and design, please refer to the [High-Level Design (HLD)](https://github.com/gilsaputro/aqua-farm-manager/wiki) document.
+For a detailed understanding of the system architecture and design, please refer to the [High-Level Design (HLD)](https://github.com/gilsaputro/user-manager/wiki) document.
 
 ## API Documentation
-The API documentation can be found in the [API Documentation](https://github.com/gilsaputro/aqua-farm-manager/wiki/Farm-Create) file in the repository. This file contains information on the endpoints, request and response formats, and any necessary details.
+The API documentation can be found in the [API Documentation](https://github.com/gilsaputro/user-manager/wiki/1.-Login-%5BPOST%5D) file in the repository. This file contains information on the endpoints, request and response formats, and any necessary details.
 
 ## Getting Started
 These intruction will get you a project and how to run the binary on your local machine.
@@ -111,8 +111,8 @@ The make test command will perform the following actions:
 ### Postman Collection
 You can import postman collection in Repo File with Name : 
 ```
-Aquafarm Management System.postman_collection.json
+User Manager.postman_collection.json
 ```
-Or import from [this](https://github.com/gilsaputro/aqua-farm-manager/wiki/Postman-Collection)
+Or import from [this](https://github.com/gilsaputro/user-manager/wiki/Postman-Collection)
 
 Note: The details mentioned in these steps may vary depending on your configuration.
