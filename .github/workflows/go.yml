@@ -1,0 +1,30 @@
+name: Run Go Tests and Calculate Coverage
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: "1.20.4"
+    
+    - name: Build
+      run: go build -v ./...
+
+    - name: Run tests and write coverage
+      run: |
+        # Menjalankan go test dengan coverage
+        go test -cover ./... > coverage.txt
+
+    - name: Use coverage in further steps
+      run: |
+        # Menggunakan file coverage.txt dalam langkah-langkah berikutnya
+        cat coverage.txt  # Misalnya, mencetak isi file untuk demonstrasi
+        
